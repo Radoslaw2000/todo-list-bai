@@ -1,54 +1,47 @@
 const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
-const https = require('https');
 const app = express();
-const port = 8000;
-
-const cors = require('cors');
-const fs = require('fs');
+const port = 3000;
 const CryptoJS = require('crypto-js');
+const cors = require('cors');
 
-var options = {
-    key: fs.readFileSync('sslcert/private.key'),
-    cert: fs.readFileSync('sslcert/certificate.crt')
-};
+app.use(cors()); 
+app.use(express.json()); 
 
-app.use(express.json(), cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'OPTIONS'],
-    allowedHeaders: '*'
-  }));
 const db = new sqlite3.Database('./database/database.db');
 
 app.get('/', (req, res) => {
-  res.send('Hello World!')
-})
+  res.send('Hello World!');
+});
 
 app.post('/register', (req, res) => {
-    const { login, password } = req.body;
+    console.log("Otrzymane dane:", req.body); 
+    const { username, password } = req.body;
 
-    if (!login || !password) {
-        return res.status(400).send('Podaj login i hasło');
+    if (!username || !password) {
+        return res.status(400).send('Podaj username i hasło');
     }
 
     const passwordHash = CryptoJS.SHA256(password).toString();
 
-    const stmt = db.prepare('INSERT INTO user (login, password) VALUES (?, ?)');
+    const stmt = db.prepare('INSERT INTO user (username, password) VALUES (?, ?)');
 
-    stmt.run(login, passwordHash, function(err) {
+    stmt.run(username, passwordHash, function(err) {
         if (err) {
-          console.log("Podany login jest zajęty: ", err.message);
-          return res.status(500).json({
-            success: false,
-            message: 'Podany login jest zajęty'});
+            console.log("Podany username jest zajęty: ", err.message);
+            return res.status(500).json({
+                success: false,
+                message: 'Podany username jest zajęty'
+            });
         }
-        
-        console.log(`User ${login} added with ID: ${this.lastID}`);
+
+        console.log(`User ${username} added with ID: ${this.lastID}`);
         return res.status(201).json({
             success: true,
-            message: 'Utworzono konto'});
-      });
-})
+            message: 'Utworzono konto'
+        });
+    });
+});
 
 app.post('/login', (req, res) => {
     const { login, password } = req.body;
@@ -60,7 +53,7 @@ app.post('/login', (req, res) => {
         });
     }
 
-    db.get('SELECT * FROM user WHERE login = ?', [login], (err, row) => {
+    db.get('SELECT * FROM user WHERE username = ?', [login], (err, row) => {
         if (err) {
             console.log('Błąd podczas pobierania danych z bazy danych: ', err.message);
             return res.status(500).json({
@@ -81,8 +74,8 @@ app.post('/login', (req, res) => {
         if (passwordHash === row.password) {
             return res.status(200).json({
                 success: true,
-                login: row.login,
-                message: 'Zalogowano na konto ' + row.login,
+                username: row.username,
+                message: 'Zalogowano na konto ' + row.username,
             });
         } else {
             return res.status(401).json({
@@ -93,6 +86,6 @@ app.post('/login', (req, res) => {
     });
 });
 
-https.createServer(options, app).listen(port, () => {
-  console.log(`Example app listening on port ${port}`)
-})
+app.listen(port, () => {
+  console.log(`Example app listening on port ${port}`);
+});
