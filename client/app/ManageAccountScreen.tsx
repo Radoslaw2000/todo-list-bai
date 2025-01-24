@@ -3,32 +3,30 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import config from './config';
 
-const LoginScreen = () => {
-  const [login, setLogin] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+const ManageAccountScreen: React.FC = () => {
+  const [newPassword, setNewPassword] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!login || !password) {
-      Alert.alert('Błąd', 'Proszę uzupełnić wszystkie pola');
+  const handleChangePassword = async () => {
+    if (!newPassword) {
+      Alert.alert('Błąd', 'Proszę wprowadzić nowe hasło');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${config.apiUrl}/login`, {
+      const response = await fetch(`${config.apiUrl}/change-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login, password }),
+        body: JSON.stringify({ password: newPassword }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         Alert.alert('Sukces', data.message);
-        router.push('/MenuScreen');
       } else {
         Alert.alert('Błąd', data.message);
       }
@@ -42,21 +40,15 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Logowanie</Text>
+      <Text style={styles.title}>Zarządzaj kontem</Text>
       <TextInput
         style={styles.input}
-        placeholder="Login"
-        value={login}
-        onChangeText={setLogin}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Hasło"
+        placeholder="Nowe hasło"
         secureTextEntry
-        value={password}
-        onChangeText={setPassword}
+        value={newPassword}
+        onChangeText={setNewPassword}
       />
-      <Button title={loading ? 'Logowanie...' : 'Zaloguj się'} onPress={handleLogin} />
+      <Button title={loading ? 'Zmiana hasła...' : 'Zmień hasło'} onPress={handleChangePassword} />
     </View>
   );
 };
@@ -67,4 +59,4 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 5 },
 });
 
-export default LoginScreen;
+export default ManageAccountScreen;

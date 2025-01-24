@@ -3,32 +3,31 @@ import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import config from './config';
 
-const LoginScreen = () => {
-  const [login, setLogin] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+const AddListScreen: React.FC = () => {
+  const [listName, setListName] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
-  const handleLogin = async () => {
-    if (!login || !password) {
-      Alert.alert('Błąd', 'Proszę uzupełnić wszystkie pola');
+  const handleAddList = async () => {
+    if (!listName) {
+      Alert.alert('Błąd', 'Proszę podać nazwę listy');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${config.apiUrl}/login`, {
+      const response = await fetch(`${config.apiUrl}/add-list`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ login, password }),
+        body: JSON.stringify({ name: listName }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
         Alert.alert('Sukces', data.message);
-        router.push('/MenuScreen');
+        router.push('/MenuScreen');  // Po dodaniu listy wracamy do menu
       } else {
         Alert.alert('Błąd', data.message);
       }
@@ -42,21 +41,14 @@ const LoginScreen = () => {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Logowanie</Text>
+      <Text style={styles.title}>Dodaj nową listę</Text>
       <TextInput
         style={styles.input}
-        placeholder="Login"
-        value={login}
-        onChangeText={setLogin}
+        placeholder="Nazwa listy"
+        value={listName}
+        onChangeText={setListName}
       />
-      <TextInput
-        style={styles.input}
-        placeholder="Hasło"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
-      <Button title={loading ? 'Logowanie...' : 'Zaloguj się'} onPress={handleLogin} />
+      <Button title={loading ? 'Dodawanie listy...' : 'Dodaj listę'} onPress={handleAddList} />
     </View>
   );
 };
@@ -67,4 +59,4 @@ const styles = StyleSheet.create({
   input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 5 },
 });
 
-export default LoginScreen;
+export default AddListScreen;
