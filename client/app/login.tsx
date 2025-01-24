@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import * as SecureStore from 'expo-secure-store'; // Import SecureStore
 import config from './config';
 
 const LoginScreen = () => {
@@ -27,6 +28,8 @@ const LoginScreen = () => {
       const data = await response.json();
 
       if (response.ok) {
+        await SecureStore.setItemAsync('username', login);
+
         Alert.alert('Sukces', data.message);
         router.push('/MenuScreen');
       } else {
