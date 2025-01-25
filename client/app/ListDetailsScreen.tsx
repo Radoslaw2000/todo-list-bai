@@ -79,8 +79,8 @@ const ListDetailsScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#4caf50" />
       </View>
     );
   }
@@ -98,7 +98,7 @@ const ListDetailsScreen = () => {
       <View style={styles.header}>
         <Text style={styles.title}>{listDetails.name}</Text>
         <TouchableOpacity onPress={navigateToEditList}>
-          <Ionicons name="pencil" size={24} color="#2196f3" />
+          <Ionicons name="pencil" size={24} color="#4caf50" />
         </TouchableOpacity>
       </View>
       <FlatList
@@ -116,7 +116,9 @@ const ListDetailsScreen = () => {
         )}
         ListEmptyComponent={
           listDetails.items.length === 0 ? (
-            <Text style={styles.emptyText}>Lista nie zawiera żadnych elementów.</Text>
+            <Text style={styles.emptyText}>
+              Lista nie zawiera żadnych elementów.
+            </Text>
           ) : null
         }
       />
@@ -125,38 +127,57 @@ const ListDetailsScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  container: {
+    flex: 1,
+    padding: 20,
+    backgroundColor: '#f5f5f5',
+  },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 20,
+    backgroundColor: '#ffffff',
+    padding: 15,
+    borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 3,
   },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  errorText: { fontSize: 18, color: 'red', textAlign: 'center' },
-  emptyText: { fontSize: 16, color: 'gray', textAlign: 'center', marginTop: 10 },
-  listItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#4caf50',
   },
-  text: {
+  errorText: {
     fontSize: 18,
-    flex: 1, // pozwala na zajmowanie dostępnego miejsca
-    marginRight: 10, // zapewnia margines po prawej stronie tekstu
-    paddingRight: 10, // dodatkowy margines, by tekst nie dochodził do krawędzi
+    color: 'red',
+    textAlign: 'center',
   },
-  checkbox: {
+  emptyText: {
+    fontSize: 16,
+    color: 'gray',
+    textAlign: 'center',
+    marginTop: 10,
+  },
+  listItem: {
+    marginVertical: 5,
+    backgroundColor: '#ffffff',
+    borderRadius: 10,
     padding: 10,
-    marginRight: 10,
-    borderRadius: 15,
-    borderWidth: 2,
-    borderColor: '#2196f3',
-    width: 30,
-    height: 30,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 2,
   },
 });
 

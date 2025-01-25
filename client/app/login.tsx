@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as SecureStore from 'expo-secure-store'; // Import SecureStore
+import * as SecureStore from 'expo-secure-store';
 import config from './config';
 
 const LoginScreen = () => {
@@ -29,7 +29,6 @@ const LoginScreen = () => {
 
       if (response.ok) {
         await SecureStore.setItemAsync('username', login);
-
         Alert.alert('Sukces', data.message);
         router.push('/MenuScreen');
       } else {
@@ -59,15 +58,31 @@ const LoginScreen = () => {
         value={password}
         onChangeText={setPassword}
       />
-      <Button title={loading ? 'Logowanie...' : 'Zaloguj się'} onPress={handleLogin} />
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleLogin}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Logowanie...' : 'Zaloguj się'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 5 },
+  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 15, borderRadius: 8 },
+  button: {
+    backgroundColor: '#2196f3',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonDisabled: { backgroundColor: '#aaa' },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
 });
 
 export default LoginScreen;

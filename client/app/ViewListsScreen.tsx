@@ -1,7 +1,16 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Alert } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  FlatList, 
+  TouchableOpacity, 
+  ActivityIndicator, 
+  Alert 
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import { Ionicons } from '@expo/vector-icons';
 import config from './config';
 
 const ViewListsScreen = () => {
@@ -40,8 +49,8 @@ const ViewListsScreen = () => {
 
   if (loading) {
     return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
+      <View style={styles.loaderContainer}>
+        <ActivityIndicator size="large" color="#4caf50" />
       </View>
     );
   }
@@ -62,25 +71,68 @@ const ViewListsScreen = () => {
               })
             }
           >
-            <Text style={styles.listText}>{item.name}</Text>
-            <Text style={styles.listText}>{item.id}</Text>
+            <View style={styles.itemContent}>
+              <Ionicons name="list" size={24} color="#ffffff" />
+              <Text style={styles.listText}>{item.name}</Text>
+            </View>
           </TouchableOpacity>
         )}
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>
+            Brak list. Dodaj nową, aby zacząć!
+          </Text>
+        }
       />
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  listItem: {
-    padding: 15,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    marginVertical: 5,
+  container: { 
+    flex: 1, 
+    padding: 20, 
+    backgroundColor: '#f5f5f5' 
   },
-  listText: { fontSize: 18 },
+  loaderContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f5f5f5',
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: 'bold', 
+    textAlign: 'center', 
+    marginBottom: 20, 
+    color: '#4caf50' 
+  },
+  listItem: {
+    marginBottom: 15,
+    borderRadius: 10,
+    backgroundColor: '#4caf50',
+    padding: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 5, // Dla Androida
+  },
+  itemContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  listText: { 
+    fontSize: 18, 
+    color: '#ffffff', 
+    marginLeft: 10, 
+    fontWeight: '600' 
+  },
+  emptyText: { 
+    textAlign: 'center', 
+    fontSize: 16, 
+    color: '#888', 
+    marginTop: 50 
+  },
 });
 
 export default ViewListsScreen;

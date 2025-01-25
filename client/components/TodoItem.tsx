@@ -23,7 +23,9 @@ const TodoItem: React.FC<TodoItemProps> = ({ id, name, checked, onToggle }) => {
         onValueChange={handleToggle}
         color={isChecked ? '#4caf50' : undefined}
       />
-      <Text style={styles.text}>{name}</Text>
+      <Text style={[styles.text, isChecked && styles.checkedText]}>
+        {name}
+      </Text>
     </View>
   );
 };
@@ -33,15 +35,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: 10,
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
-    width: '100%',
   },
   text: {
     flex: 1,
     marginLeft: 10,
     fontSize: 16,
     flexShrink: 1,
+  },
+  checkedText: {
+    textDecorationLine: 'line-through',
+    color: 'gray',
   },
 });
 
