@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, Button, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import config from './config';
 
@@ -45,7 +45,7 @@ const RegistrationScreen = () => {
       <Text style={styles.title}>Rejestracja</Text>
       <TextInput
         style={styles.input}
-        placeholder="username"
+        placeholder="Nazwa użytkownika"
         value={username}
         onChangeText={setUsername}
       />
@@ -56,15 +56,31 @@ const RegistrationScreen = () => {
         value={password}
         onChangeText={setPassword}
       />
-      <Button title={loading ? 'Rejestracja...' : 'Zarejestruj się'} onPress={handleRegister} />
+      <TouchableOpacity
+        style={[styles.button, loading && styles.buttonDisabled]}
+        onPress={handleRegister}
+        disabled={loading}
+      >
+        <Text style={styles.buttonText}>
+          {loading ? 'Rejestracja...' : 'Zarejestruj się'}
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 20 },
-  title: { fontSize: 24, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
-  input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 5 },
+  container: { flex: 1, justifyContent: 'center', padding: 20, backgroundColor: '#fff' },
+  title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', marginBottom: 20 },
+  input: { borderWidth: 1, borderColor: '#ccc', padding: 12, marginBottom: 15, borderRadius: 8 },
+  button: {
+    backgroundColor: '#2196f3',
+    paddingVertical: 15,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  buttonDisabled: { backgroundColor: '#aaa' },
+  buttonText: { color: '#fff', fontSize: 18, fontWeight: '600' },
 });
 
 export default RegistrationScreen;
