@@ -17,7 +17,7 @@ import config from './config';
 
 const AddListScreen = () => {
   const [listName, setListName] = useState<string>('');
-  const [items, setItems] = useState<{ id: string; name: string; isEditing: boolean }[]>([]);
+  const [items, setItems] = useState<{ id: string; name: string }[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [username, setUsername] = useState<string | null>(null);
   const router = useRouter();
@@ -35,31 +35,14 @@ const AddListScreen = () => {
     const newItem = {
       id: Math.random().toString(),
       name: '',
-      isEditing: true,
     };
-    setItems([...items, newItem]);
+    setItems((prevItems) => [...prevItems, newItem]);
   };
 
   const handleEditItem = (id: string, name: string) => {
     setItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === id ? { ...item, name } : item
-      )
+      prevItems.map((item) => (item.id === id ? { ...item, name } : item))
     );
-  };
-
-  const handleEndEditing = (id: string) => {
-    const item = items.find((item) => item.id === id);
-    if (item?.name.trim() === '') {
-      // Usuń element, jeśli jest pusty
-      handleDeleteItem(id);
-    } else {
-      setItems((prevItems) =>
-        prevItems.map((item) =>
-          item.id === id ? { ...item, isEditing: false } : item
-        )
-      );
-    }
   };
 
   const handleDeleteItem = (id: string) => {
@@ -72,8 +55,8 @@ const AddListScreen = () => {
       return;
     }
 
-    if (items.length === 0 || items.some((item) => item.name.trim() === '')) {
-      Alert.alert('Błąd', 'Proszę dodać przynajmniej jeden poprawny element listy.');
+    if (items.length === 0) {
+      Alert.alert('Błąd', 'Lista musi zawierać przynajmniej jeden element.');
       return;
     }
 
@@ -111,31 +94,14 @@ const AddListScreen = () => {
     }
   };
 
-  const renderItem = ({ item }: { item: { id: string; name: string; isEditing: boolean } }) => (
+  const renderItem = ({ item }: { item: { id: string; name: string } }) => (
     <View style={styles.listItem}>
-      {item.isEditing ? (
-        <TextInput
-          style={styles.listItemInput}
-          placeholder="Wpisz nazwę elementu"
-          value={item.name}
-          onChangeText={(text) => handleEditItem(item.id, text)}
-          onEndEditing={() => handleEndEditing(item.id)}
-          autoFocus
-        />
-      ) : (
-        <TouchableOpacity
-          style={{ flex: 1 }}
-          onPress={() =>
-            setItems((prevItems) =>
-              prevItems.map((prevItem) =>
-                prevItem.id === item.id ? { ...prevItem, isEditing: true } : prevItem
-              )
-            )
-          }
-        >
-          <Text style={styles.listItemText}>{item.name || 'Brak nazwy'}</Text>
-        </TouchableOpacity>
-      )}
+      <TextInput
+        style={styles.listItemInput}
+        placeholder="Nazwa elementu"
+        value={item.name}
+        onChangeText={(text) => handleEditItem(item.id, text)}
+      />
       <TouchableOpacity onPress={() => handleDeleteItem(item.id)}>
         <Ionicons name="trash" size={24} color="red" />
       </TouchableOpacity>
@@ -155,19 +121,15 @@ const AddListScreen = () => {
         onChangeText={setListName}
       />
       <FlatList
-        data={[...items, { id: 'add-button', name: '', isEditing: false }]}
+        data={items}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) =>
-          item.id === 'add-button' ? (
-            <TouchableOpacity style={styles.addButtonInList} onPress={handleAddItem}>
-              <Ionicons name="add" size={24} color="white" />
-            </TouchableOpacity>
-          ) : (
-            renderItem({ item })
-          )
-        }
+        renderItem={renderItem}
         ListEmptyComponent={<Text style={styles.emptyText}>Brak elementów na liście</Text>}
+        contentContainerStyle={{ paddingBottom: 100 }}
       />
+      <TouchableOpacity style={styles.addButtonInList} onPress={handleAddItem}>
+        <Ionicons name="add" size={24} color="white" />
+      </TouchableOpacity>
       <TouchableOpacity
         style={[styles.submitButton, loading && styles.disabledButton]}
         onPress={handleAddList}
@@ -195,17 +157,14 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 10,
   },
-  listItemText: { fontSize: 16, flex: 1 },
-  listItemInput: { flex: 1, fontSize: 16, padding: 5, borderBottomWidth: 1, borderColor: '#ccc' },
+  listItemInput: { flex: 1, fontSize: 16, marginRight: 10 },
   emptyText: { textAlign: 'center', fontSize: 16, color: '#888' },
   addButtonInList: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: 15,
     backgroundColor: '#4caf50',
     borderRadius: 5,
-    marginTop: 10,
+    alignItems: 'center',
+    marginBottom: 10,
   },
   submitButton: {
     backgroundColor: '#2196f3',

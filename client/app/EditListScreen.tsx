@@ -56,13 +56,14 @@ const EditListScreen = () => {
 
   const handleAddItem = () => {
     const newItem = {
-      id: '',  // Pusty identyfikator dla nowych elementów
+      id: Date.now().toString(), // Używamy aktualnego timestampu jako identyfikatora
       name: '',
       checked: 0,
-      isNew: true, // Flaga dla nowych elementów
+      isNew: true,
     };
     setItems((prevItems) => [...prevItems, newItem]);
   };
+  
 
   const handleEditItem = (id: string, name: string) => {
     setItems((prevItems) =>
