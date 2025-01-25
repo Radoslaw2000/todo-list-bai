@@ -201,7 +201,66 @@ app.post('/add-list', (req, res) => {
       });
     });
   });
-  
+
+//##########################################################################
+//##########################################################################
+app.get('/list-details/:listId', (req, res) => {
+  const { listId } = req.params;
+
+  db.get('SELECT name FROM lists WHERE id = ?', [listId], (err, listRow) => {
+    if (err) {
+      console.log('Błąd podczas pobierania listy:', err.message);
+      return res.status(500).json({ message: 'Błąd serwera' });
+    }
+
+    if (!listRow) {
+      return res.status(404).json({ message: 'Nie znaleziono listy' });
+    }
+
+    db.all('SELECT id, name, checked FROM items WHERE list_id = ?', [listId], (err, items) => {
+      if (err) {
+        console.log('Błąd podczas pobierania elementów listy:', err.message);
+        return res.status(500).json({ message: 'Błąd serwera' });
+      }
+
+      res.status(200).json({
+        name: listRow.name,
+        items: items || [], // Zwracamy pełną listę elementów z `checked`
+      });
+    });
+  });
+});
+
+
+
+
+//##########################################################################
+//##########################################################################
+app.post('/update-item-status', (req, res) => {
+  const { itemId, checked } = req.body;
+
+  if (itemId === undefined || checked === undefined) {
+    return res.status(400).json({ message: 'Brak wymaganych danych' });
+  }
+
+  db.run(
+    'UPDATE items SET checked = ? WHERE id = ?',
+    [checked ? 1 : 0, itemId],
+    function (err) {
+      if (err) {
+        console.log('Błąd podczas aktualizacji statusu elementu:', err.message);
+        return res.status(500).json({ message: 'Błąd serwera' });
+      }
+
+      if (this.changes === 0) {
+        return res.status(404).json({ message: 'Nie znaleziono elementu' });
+      }
+
+      res.status(200).json({ message: 'Status elementu został zaktualizowany' });
+    }
+  );
+});
+
   
 
 app.listen(port, () => {
