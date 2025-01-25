@@ -82,7 +82,7 @@ const AddListScreen = () => {
 
       if (response.ok) {
         Alert.alert('Sukces', data.message);
-        router.push('/MenuScreen');
+        router.back();;
       } else {
         Alert.alert('Błąd', data.message);
       }

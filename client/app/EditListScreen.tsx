@@ -112,7 +112,7 @@ const EditListScreen = () => {
 
       if (response.ok) {
         Alert.alert('Sukces', 'Lista została zaktualizowana.');
-        router.push('/MenuScreen');
+        router.back();
       } else {
         Alert.alert('Błąd', 'Nie udało się zaktualizować listy.');
       }
