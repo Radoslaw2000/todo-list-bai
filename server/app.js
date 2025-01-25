@@ -261,6 +261,126 @@ app.post('/update-item-status', (req, res) => {
   );
 });
 
+//##########################################################################
+//##########################################################################
+app.put('/edit-list/:listId', async (req, res) => {
+  const { listId } = req.params;
+  const { name, existing_items, new_items } = req.body;
+
+  console.log('[DEBUG] Otrzymane dane wejściowe:', { listId, name, existing_items, new_items });
+
+  // Walidacja danych wejściowych
+  if (!listId || !name || !Array.isArray(existing_items)) {
+    console.error('[ERROR] Niepoprawne dane wejściowe:', { listId, name, existing_items });
+    return res.status(400).json({ message: 'Niepoprawne dane wejściowe.' });
+  }
+
+  try {
+    // 1. Zaktualizuj nazwę listy
+    await db.run('UPDATE lists SET name = ? WHERE id = ?', [name, listId]);
+    console.log('[DEBUG] Nazwa listy została zaktualizowana.');
+
+    // 2. Pobierz istniejące elementy
+    const existingItems = await new Promise((resolve, reject) => {
+      db.all('SELECT id, name, checked FROM items WHERE list_id = ?', [listId], (err, rows) => {
+        if (err) reject(err);
+        resolve(rows);
+      });
+    });
+
+    console.log('[DEBUG] Istniejące elementy:', existingItems);
+
+    // Mapa istniejących elementów dla porównań
+    const existingItemsMap = new Map(existingItems.map(item => [item.id, item]));
+    const itemsToAdd = [];
+    const itemsToUpdate = [];
+    const existingItemIds = new Set();
+
+    // 3. Przetwarzanie existing_items (istniejące elementy do aktualizacji)
+    for (const item of existing_items) {
+      if (existingItemsMap.has(item.id)) {
+        const existingItem = existingItemsMap.get(item.id);
+        if (existingItem.name !== item.name || existingItem.checked !== item.checked) {
+          // Jeśli nazwa lub status 'checked' się zmieniły, aktualizujemy element
+          itemsToUpdate.push([item.name, item.checked || 0, item.id]);
+        }
+        existingItemIds.add(item.id);
+      }
+    }
+
+    // 4. Przetwarzanie new_items (nowe elementy do dodania)
+    const itemsToAddFromNewItems = new_items.map(item => [listId, item.name, item.checked || 0]);
+
+    // 5. Elementy do usunięcia
+    const itemsToDelete = [...existingItemsMap.keys()].filter(id => !existingItemIds.has(id));
+
+    // Wykonanie operacji w bazie danych
+    const queries = [];
+
+    // Dodanie nowych elementów (new_items)
+    if (itemsToAddFromNewItems.length > 0) {
+      const placeholders = itemsToAddFromNewItems.map(() => '(?, ?, ?)').join(',');
+      const values = itemsToAddFromNewItems.flat();
+      queries.push(db.run(`INSERT INTO items (list_id, name, checked) VALUES ${placeholders}`, values));
+    }
+
+    // Aktualizacja istniejących elementów (existing_items)
+    if (itemsToUpdate.length > 0) {
+      itemsToUpdate.forEach(([name, checked, id]) => {
+        queries.push(db.run('UPDATE items SET name = ?, checked = ? WHERE id = ?', [name, checked, id]));
+      });
+    }
+
+    // Usunięcie elementów, które zostały usunięte z listy
+    if (itemsToDelete.length > 0) {
+      const placeholders = itemsToDelete.map(() => '?').join(',');
+      queries.push(db.run(`DELETE FROM items WHERE id IN (${placeholders})`, itemsToDelete));
+    }
+
+    // Wykonaj wszystkie zapytania w bazie danych
+    await Promise.all(queries);
+
+    res.status(200).json({ message: 'Lista została zaktualizowana.' });
+  } catch (error) {
+    console.error('[ERROR] Błąd podczas edytowania listy:', error);
+    return res.status(500).json({ message: 'Błąd serwera' });
+  }
+});
+
+
+//##########################################################################
+//##########################################################################
+app.delete('/edit-list/:listId', async (req, res) => {
+  const { listId } = req.params;
+
+  if (!listId) {
+    console.error('[ERROR] Brak listId w żądaniu.');
+    return res.status(400).json({ message: 'Brak identyfikatora listy.' });
+  }
+
+  try {
+    // Usuń elementy związane z listą
+    await db.run('DELETE FROM items WHERE list_id = ?', [listId]);
+
+    // Usuń samą listę
+    await db.run('DELETE FROM lists WHERE id = ?', [listId]);
+
+    console.log('[DEBUG] Lista została usunięta.');
+
+    res.status(200).json({ message: 'Lista została usunięta.' });
+  } catch (error) {
+    console.error('[ERROR] Błąd podczas usuwania listy:', error);
+    return res.status(500).json({ message: 'Błąd serwera' });
+  }
+});
+
+
+
+
+//##########################################################################
+//##########################################################################
+
+
   
 
 app.listen(port, () => {

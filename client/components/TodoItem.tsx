@@ -35,10 +35,13 @@ const styles = StyleSheet.create({
     padding: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#ccc',
+    width: '100%',
   },
   text: {
+    flex: 1,
     marginLeft: 10,
     fontSize: 16,
+    flexShrink: 1,
   },
 });
 
