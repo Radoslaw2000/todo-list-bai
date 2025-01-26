@@ -13,11 +13,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
+import * as DocumentPicker from 'expo-document-picker';
+import CheckBox from 'expo-checkbox';
 import config from './config';
 
 const AddListScreen = () => {
   const [listName, setListName] = useState<string>('');
-  const [items, setItems] = useState<{ id: string; name: string }[]>([]);
+  const [items, setItems] = useState<{ id: string; name: string; checked: boolean }[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [username, setUsername] = useState<string | null>(null);
   const router = useRouter();
@@ -35,6 +37,7 @@ const AddListScreen = () => {
     const newItem = {
       id: Math.random().toString(),
       name: '',
+      checked: false,
     };
     setItems((prevItems) => [...prevItems, newItem]);
   };
@@ -45,8 +48,54 @@ const AddListScreen = () => {
     );
   };
 
+  const handleToggleChecked = (id: string) => {
+    setItems((prevItems) =>
+      prevItems.map((item) =>
+        item.id === id ? { ...item, checked: !item.checked } : item
+      )
+    );
+  };
+
   const handleDeleteItem = (id: string) => {
     setItems((prevItems) => prevItems.filter((item) => item.id !== id));
+  };
+
+  const handleLoadFromFile = async () => {
+    try {
+      const file = await DocumentPicker.getDocumentAsync({
+        type: 'application/json',
+      });
+
+      if (file.canceled) {
+        Alert.alert('Anulowano', 'Nie wybrano pliku.');
+        return;
+      }
+
+      const { uri, name } = file.assets[0];
+      console.log('Wybrano plik:', { name, uri });
+
+      const fileContent = await fetch(uri).then((res) => res.text());
+      console.log('Zawartość pliku:', fileContent);
+
+      const content = JSON.parse(fileContent);
+
+      if (content?.items && Array.isArray(content.items)) {
+        const loadedItems = content.items.map((item: any, index: number) => ({
+          id: index.toString(),
+          name: item.name || '',
+          checked: Boolean(item.checked), // Zabezpieczenie dla checked
+        }));
+        setItems(loadedItems);
+        setListName(content.name || '');
+
+        Alert.alert('Sukces', 'Lista została załadowana poprawnie.');
+      } else {
+        Alert.alert('Błąd', 'Nieprawidłowy format pliku. Sprawdź strukturę pliku JSON.');
+      }
+    } catch (error) {
+      console.error('Błąd wczytywania pliku:', error);
+      Alert.alert('Błąd', 'Nie udało się wczytać pliku. Sprawdź poprawność pliku JSON.');
+    }
   };
 
   const handleAddList = async () => {
@@ -73,7 +122,10 @@ const AddListScreen = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: listName,
-          items: items.map((item) => item.name),
+          items: items.map((item) => ({
+            name: item.name,
+            checked: item.checked,
+          })),
           username,
         }),
       });
@@ -82,7 +134,7 @@ const AddListScreen = () => {
 
       if (response.ok) {
         Alert.alert('Sukces', data.message);
-        router.back();;
+        router.back();
       } else {
         Alert.alert('Błąd', data.message);
       }
@@ -94,8 +146,13 @@ const AddListScreen = () => {
     }
   };
 
-  const renderItem = ({ item }: { item: { id: string; name: string } }) => (
+  const renderItem = ({ item }: { item: { id: string; name: string; checked: boolean } }) => (
     <View style={styles.listItem}>
+      <CheckBox
+        value={item.checked}
+        onValueChange={() => handleToggleChecked(item.id)}
+        color={item.checked ? '#4caf50' : undefined}
+      />
       <TextInput
         style={styles.listItemInput}
         placeholder="Nazwa elementu"
@@ -107,6 +164,7 @@ const AddListScreen = () => {
       </TouchableOpacity>
     </View>
   );
+  
 
   return (
     <KeyboardAvoidingView
@@ -129,6 +187,9 @@ const AddListScreen = () => {
       />
       <TouchableOpacity style={styles.addButtonInList} onPress={handleAddItem}>
         <Ionicons name="add" size={24} color="white" />
+      </TouchableOpacity>
+      <TouchableOpacity style={styles.loadButton} onPress={handleLoadFromFile}>
+        <Text style={styles.loadButtonText}>Wczytaj z pliku</Text>
       </TouchableOpacity>
       <TouchableOpacity
         style={[styles.submitButton, loading && styles.disabledButton]}
@@ -157,7 +218,15 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     marginBottom: 10,
   },
-  listItemInput: { flex: 1, fontSize: 16, marginRight: 10 },
+  listItemInput: {
+    flex: 1,
+    fontSize: 16,
+    marginRight: 10,
+  },
+  checkedText: {
+    textDecorationLine: 'line-through',
+    color: 'gray',
+  },
   emptyText: { textAlign: 'center', fontSize: 16, color: '#888' },
   addButtonInList: {
     padding: 15,
@@ -166,6 +235,14 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 10,
   },
+  loadButton: {
+    padding: 15,
+    backgroundColor: '#ff9800',
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  loadButtonText: { color: 'white', textAlign: 'center', fontSize: 16 },
   submitButton: {
     backgroundColor: '#2196f3',
     padding: 15,

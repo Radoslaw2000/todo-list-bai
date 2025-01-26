@@ -95,70 +95,64 @@ app.post('/login', (req, res) => {
 
 //##########################################################################
 //##########################################################################
-
 app.post('/add-list', (req, res) => {
-    const { name, items, username } = req.body;
-  
-    if (!name || !items || items.length === 0 || !username) {
-      return res.status(400).json({ message: 'Brak wymaganych danych' });
+  const { name, items, username } = req.body;
+
+  if (!name || !items || items.length === 0 || !username) {
+    return res.status(400).json({ message: 'Brak wymaganych danych' });
+  }
+
+  db.get('SELECT id FROM user WHERE username = ?', [username], (err, row) => {
+    if (err) {
+      console.log('Błąd podczas wyszukiwania użytkownika: ', err.message);
+      return res.status(500).json({ message: 'Błąd serwera' });
     }
-  
-    // Pobierz ID użytkownika na podstawie nazwy użytkownika
-    db.get('SELECT id FROM user WHERE username = ?', [username], (err, row) => {
+
+    if (!row) {
+      return res.status(404).json({ message: 'Nie znaleziono użytkownika' });
+    }
+
+    const userId = row.id;
+
+    db.run('INSERT INTO lists (name) VALUES (?)', [name], function (err) {
       if (err) {
-        console.log('Błąd podczas wyszukiwania użytkownika: ', err.message);
-        return res.status(500).json({ message: 'Błąd serwera' });
+        console.log('Błąd podczas dodawania listy: ', err.message);
+        return res.status(500).json({ message: 'Nie udało się dodać listy' });
       }
-  
-      if (!row) {
-        return res.status(404).json({ message: 'Nie znaleziono użytkownika' });
-      }
-  
-      const userId = row.id;
-  
-      // Dodaj nową listę do tabeli 'lists'
-      db.run('INSERT INTO lists (name) VALUES (?)', [name], function (err) {
+
+      const listId = this.lastID;
+
+      db.run('INSERT INTO users_lists (user_id, list_id) VALUES (?, ?)', [userId, listId], (err) => {
         if (err) {
-          console.log('Błąd podczas dodawania listy: ', err.message);
-          return res.status(500).json({ message: 'Nie udało się dodać listy' });
+          console.log('Błąd podczas przypisywania listy: ', err.message);
+          return res.status(500).json({ message: 'Nie udało się przypisać listy do użytkownika' });
         }
-  
-        const listId = this.lastID;
-  
-        // Powiąż listę z użytkownikiem w tabeli 'users_lists'
-        db.run('INSERT INTO users_lists (user_id, list_id) VALUES (?, ?)', [userId, listId], (err) => {
-          if (err) {
-            console.log('Błąd podczas przypisywania listy: ', err.message);
-            return res.status(500).json({ message: 'Nie udało się przypisać listy do użytkownika' });
-          }
-  
-          // Dodaj elementy do listy w tabeli 'items'
-          const itemQueries = items.map((item) => ({
-            query: 'INSERT INTO items (list_id, name) VALUES (?, ?)',
-            params: [listId, item],
-          }));
-  
-          // Wykonaj wszystkie zapytania do tabeli 'items'
-          const executeItems = itemQueries.map(({ query, params }) =>
-            new Promise((resolve, reject) => {
-              db.run(query, params, (err) => {
-                if (err) reject(err);
-                resolve();
-              });
-            })
-          );
-  
-          Promise.all(executeItems)
-            .then(() => res.status(201).json({ message: 'Lista została dodana i przypisana do użytkownika' }))
-            .catch((err) => {
-              console.log('Błąd podczas dodawania elementów: ', err.message);
-              res.status(500).json({ message: 'Nie udało się dodać elementów do listy' });
+
+        const itemQueries = items.map((item) => ({
+          query: 'INSERT INTO items (list_id, name, checked) VALUES (?, ?, ?)',
+          params: [listId, item.name, item.checked ? 1 : 0],
+        }));
+
+        const executeItems = itemQueries.map(({ query, params }) =>
+          new Promise((resolve, reject) => {
+            db.run(query, params, (err) => {
+              if (err) reject(err);
+              resolve();
             });
-        });
+          })
+        );
+
+        Promise.all(executeItems)
+          .then(() => res.status(201).json({ message: 'Lista została dodana i przypisana do użytkownika' }))
+          .catch((err) => {
+            console.log('Błąd podczas dodawania elementów: ', err.message);
+            res.status(500).json({ message: 'Nie udało się dodać elementów do listy' });
+          });
       });
     });
   });
-  
+});
+
 //##########################################################################
 //##########################################################################
 
