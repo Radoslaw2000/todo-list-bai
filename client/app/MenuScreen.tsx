@@ -6,10 +6,6 @@ import LocationWeather from '../components/LocationWeather';
 const MenuScreen = () => {
   const router = useRouter();
 
-  const handleManageAccount = () => {
-    router.push('/ManageAccountScreen');
-  };
-
   const handleAddList = () => {
     router.push('/AddListScreen');
   };
@@ -21,10 +17,6 @@ const MenuScreen = () => {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Menu</Text>
-
-      <TouchableOpacity style={styles.button} onPress={handleManageAccount}>
-        <Text style={styles.buttonText}>Zarządzaj kontem</Text>
-      </TouchableOpacity>
 
       <TouchableOpacity style={styles.button} onPress={handleAddList}>
         <Text style={styles.buttonText}>Dodaj listę</Text>
