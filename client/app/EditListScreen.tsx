@@ -12,6 +12,8 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import config from './config';
 
 const EditListScreen = () => {
@@ -38,7 +40,7 @@ const EditListScreen = () => {
             id: item.id,
             name: item.name,
             checked: item.checked || 0,
-            isNew: false,  // Stare elementy mają isNew ustawione na false
+            isNew: false,
           })));
         } else {
           Alert.alert('Błąd', 'Nie udało się pobrać szczegółów listy.');
@@ -56,14 +58,13 @@ const EditListScreen = () => {
 
   const handleAddItem = () => {
     const newItem = {
-      id: Date.now().toString(), // Używamy aktualnego timestampu jako identyfikatora
+      id: Date.now().toString(),
       name: '',
       checked: 0,
       isNew: true,
     };
     setItems((prevItems) => [...prevItems, newItem]);
   };
-  
 
   const handleEditItem = (id: string, name: string) => {
     setItems((prevItems) =>
@@ -88,9 +89,8 @@ const EditListScreen = () => {
 
     setLoading(true);
 
-    // Odfiltrowanie existing_items i new_items
-    const existingItems = items.filter(item => !item.isNew);  // Elementy, które są już zapisane
-    const newItems = items.filter(item => item.isNew);        // Nowe elementy
+    const existingItems = items.filter((item) => !item.isNew);
+    const newItems = items.filter((item) => item.isNew);
 
     try {
       const response = await fetch(`${config.apiUrl}/edit-list/${listId}`, {
@@ -121,6 +121,27 @@ const EditListScreen = () => {
       Alert.alert('Błąd', 'Wystąpił problem podczas aktualizacji listy.');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDownloadList = async () => {
+    try {
+      const jsonData = {
+        name: listName,
+        items: items.map(({ id, ...rest }) => rest), // Usuwamy pole `id`
+      };
+
+      const fileUri = `${FileSystem.documentDirectory}${listName || 'lista'}.json`;
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(jsonData, null, 2));
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert('Gotowe', `Plik został zapisany w: ${fileUri}`);
+      }
+    } catch (error) {
+      console.error('Błąd podczas pobierania listy:', error);
+      Alert.alert('Błąd', 'Nie udało się pobrać listy.');
     }
   };
 
@@ -196,6 +217,9 @@ const EditListScreen = () => {
             <TouchableOpacity style={styles.submitButton} onPress={handleSaveList}>
               <Text style={styles.submitButtonText}>Zapisz</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadList}>
+              <Text style={styles.downloadButtonText}>Pobierz</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteList}>
               <Text style={styles.deleteButtonText}>Usuń listę</Text>
             </TouchableOpacity>
@@ -236,6 +260,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   submitButtonText: { color: 'white', fontSize: 16 },
+  downloadButton: {
+    backgroundColor: '#ff9800',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  downloadButtonText: { color: 'white', fontSize: 16 },
   deleteButton: { backgroundColor: 'red', padding: 15, borderRadius: 5, alignItems: 'center' },
   deleteButtonText: { color: 'white', fontSize: 16 },
 });
