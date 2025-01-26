@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
+import LocationWeather from '../components/LocationWeather';
 
 const MenuScreen = () => {
   const router = useRouter();
@@ -32,6 +33,9 @@ const MenuScreen = () => {
       <TouchableOpacity style={styles.button} onPress={handleViewLists}>
         <Text style={styles.buttonText}>Przeglądaj listy</Text>
       </TouchableOpacity>
+
+      <LocationWeather />
+
     </View>
   );
 };
