@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,11 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import TodoItem from '../components/TodoItem';
 import { Ionicons } from '@expo/vector-icons';
 import config from './config';
+import api from '../services/api';
 
 const ListDetailsScreen = () => {
   const { listId } = useLocalSearchParams<{ listId: string }>();
@@ -19,42 +21,43 @@ const ListDetailsScreen = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchListDetails = async () => {
-      if (!listId) {
-        Alert.alert('Błąd', 'Nie przekazano listId');
-        router.push('/');
-        return;
-      }
+  const fetchListDetails = async () => {
+    if (!listId) {
+      Alert.alert('Błąd', 'Nie przekazano listId');
+      router.push('/');
+      return;
+    }
 
-      try {
-        const response = await fetch(`${config.apiUrl}/list-details/${listId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setListDetails(data);
-        } else {
-          Alert.alert('Błąd', 'Nie udało się pobrać szczegółów listy.');
-        }
-      } catch (error) {
-        console.error('Błąd:', error);
-        Alert.alert('Błąd', 'Wystąpił problem podczas pobierania danych.');
-      } finally {
-        setLoading(false);
+    try {
+      const response = await api.get(`/list-details/${listId}`);
+      if (response.status === 200) {
+        setListDetails(response.data);
+      } else {
+        Alert.alert('Błąd', 'Nie udało się pobrać szczegółów listy.');
       }
-    };
+    } catch (error) {
+      console.error('Błąd:', error);
+      Alert.alert('Błąd', 'Wystąpił problem podczas pobierania danych.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchListDetails();
-  }, [listId]);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchListDetails();
+    }, [listId])
+  );
 
   const toggleItemChecked = async (itemId: number, checked: boolean) => {
     try {
-      const response = await fetch(`${config.apiUrl}/update-item-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId, checked }),
+      const response = await api.post('/update-item-status', {
+        itemId,
+        checked,
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setListDetails((prev: any) => ({
           ...prev,
           items: prev.items.map((item: any) =>
@@ -130,6 +133,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+    paddingTop: 40,
     backgroundColor: '#f5f5f5',
   },
   loaderContainer: {
