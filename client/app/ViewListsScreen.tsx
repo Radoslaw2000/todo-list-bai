@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { 
   View, 
   Text, 
@@ -12,40 +12,43 @@ import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
 import config from './config';
+import { useFocusEffect } from '@react-navigation/native';
 
 const ViewListsScreen = () => {
   const [lists, setLists] = useState<any[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchLists = async () => {
-      setLoading(true);
-      try {
-        const username = await SecureStore.getItemAsync('username');
-        if (!username) {
-          Alert.alert('Błąd', 'Nie jesteś zalogowany.');
-          router.push('/login');
-          return;
-        }
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchLists = async () => {
+        setLoading(true);
+        try {
+          const username = await SecureStore.getItemAsync('username');
+          if (!username) {
+            Alert.alert('Błąd', 'Nie jesteś zalogowany.');
+            router.push('/login');
+            return;
+          }
 
-        const response = await fetch(`${config.apiUrl}/user-lists/${username}`);
-        if (response.ok) {
-          const data = await response.json();
-          setLists(data.lists || []);
-        } else {
-          Alert.alert('Błąd', 'Nie udało się pobrać list.');
+          const response = await fetch(`${config.apiUrl}/user-lists/${username}`);
+          if (response.ok) {
+            const data = await response.json();
+            setLists(data.lists || []);
+          } else {
+            Alert.alert('Błąd', 'Nie udało się pobrać list.');
+          }
+        } catch (error) {
+          console.error('Błąd podczas pobierania list:', error);
+          Alert.alert('Błąd', 'Coś poszło nie tak.');
+        } finally {
+          setLoading(false);
         }
-      } catch (error) {
-        console.error('Błąd podczas pobierania list:', error);
-        Alert.alert('Błąd', 'Coś poszło nie tak.');
-      } finally {
-        setLoading(false);
-      }
-    };
+      };
 
-    fetchLists();
-  }, []);
+      fetchLists();
+    }, []) // Zmienna zależna - pusta tablica powoduje wywołanie przy każdym wejściu na ekran
+  );
 
   if (loading) {
     return (
@@ -116,7 +119,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
-    elevation: 5, // Dla Androida
+    elevation: 5,
   },
   itemContent: {
     flexDirection: 'row',
