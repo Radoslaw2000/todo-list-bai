@@ -12,7 +12,10 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
 import config from './config';
+import api from '../services/api';
 
 const EditListScreen = () => {
   const { listId } = useLocalSearchParams<{ listId: string }>();
@@ -30,15 +33,14 @@ const EditListScreen = () => {
       }
 
       try {
-        const response = await fetch(`${config.apiUrl}/list-details/${listId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setListName(data.name);
-          setItems(data.items.map((item: any) => ({
+        const response = await api.get(`/list-details/${listId}`);
+        if (response.status === 200) {
+          setListName(response.data.name);
+          setItems(response.data.items.map((item: any) => ({
             id: item.id,
             name: item.name,
             checked: item.checked || 0,
-            isNew: false,  // Stare elementy mają isNew ustawione na false
+            isNew: false,
           })));
         } else {
           Alert.alert('Błąd', 'Nie udało się pobrać szczegółów listy.');
@@ -56,14 +58,13 @@ const EditListScreen = () => {
 
   const handleAddItem = () => {
     const newItem = {
-      id: Date.now().toString(), // Używamy aktualnego timestampu jako identyfikatora
+      id: Date.now().toString(),
       name: '',
       checked: 0,
       isNew: true,
     };
     setItems((prevItems) => [...prevItems, newItem]);
   };
-  
 
   const handleEditItem = (id: string, name: string) => {
     setItems((prevItems) =>
@@ -88,29 +89,24 @@ const EditListScreen = () => {
 
     setLoading(true);
 
-    // Odfiltrowanie existing_items i new_items
-    const existingItems = items.filter(item => !item.isNew);  // Elementy, które są już zapisane
-    const newItems = items.filter(item => item.isNew);        // Nowe elementy
+    const existingItems = items.filter((item) => !item.isNew);
+    const newItems = items.filter((item) => item.isNew);
 
     try {
-      const response = await fetch(`${config.apiUrl}/edit-list/${listId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: listName,
-          existing_items: existingItems.map((item) => ({
-            id: item.id,
-            name: item.name,
-            checked: item.checked,
-          })),
-          new_items: newItems.map((item) => ({
-            name: item.name,
-            checked: item.checked,
-          })),
-        }),
+      const response = await api.put(`/edit-list/${listId}`, {
+        name: listName,
+        existing_items: existingItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          checked: item.checked,
+        })),
+        new_items: newItems.map((item) => ({
+          name: item.name,
+          checked: item.checked,
+        })),
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         Alert.alert('Sukces', 'Lista została zaktualizowana.');
         router.back();
       } else {
@@ -124,6 +120,27 @@ const EditListScreen = () => {
     }
   };
 
+  const handleDownloadList = async () => {
+    try {
+      const jsonData = {
+        name: listName,
+        items: items.map(({ id, ...rest }) => rest),
+      };
+
+      const fileUri = `${FileSystem.documentDirectory}${listName || 'lista'}.json`;
+      await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(jsonData, null, 2));
+
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(fileUri);
+      } else {
+        Alert.alert('Gotowe', `Plik został zapisany w: ${fileUri}`);
+      }
+    } catch (error) {
+      console.error('Błąd podczas pobierania listy:', error);
+      Alert.alert('Błąd', 'Nie udało się pobrać listy.');
+    }
+  };
+
   const handleDeleteList = async () => {
     Alert.alert('Potwierdzenie', 'Czy na pewno chcesz usunąć tę listę?', [
       { text: 'Anuluj', style: 'cancel' },
@@ -132,13 +149,11 @@ const EditListScreen = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            const response = await fetch(`${config.apiUrl}/edit-list/${listId}`, {
-              method: 'DELETE',
-            });
+            const response = await api.delete(`/edit-list/${listId}`);
 
-            if (response.ok) {
+            if (response.status === 200) {
               Alert.alert('Sukces', 'Lista została usunięta.');
-              router.push('/MenuScreen');
+              router.dismissTo('/ViewListsScreen');
             } else {
               Alert.alert('Błąd', 'Nie udało się usunąć listy.');
             }
@@ -196,6 +211,9 @@ const EditListScreen = () => {
             <TouchableOpacity style={styles.submitButton} onPress={handleSaveList}>
               <Text style={styles.submitButtonText}>Zapisz</Text>
             </TouchableOpacity>
+            <TouchableOpacity style={styles.downloadButton} onPress={handleDownloadList}>
+              <Text style={styles.downloadButtonText}>Pobierz</Text>
+            </TouchableOpacity>
             <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteList}>
               <Text style={styles.deleteButtonText}>Usuń listę</Text>
             </TouchableOpacity>
@@ -207,7 +225,12 @@ const EditListScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20, backgroundColor: '#fff' },
+  container: {
+    flex: 1,
+    padding: 20,
+    paddingTop: 40,
+    backgroundColor: '#fff',
+  },
   title: { fontSize: 24, fontWeight: 'bold', marginBottom: 20 },
   input: { borderWidth: 1, borderColor: '#ccc', padding: 10, marginBottom: 15, borderRadius: 5 },
   listItem: {
@@ -236,6 +259,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   submitButtonText: { color: 'white', fontSize: 16 },
+  downloadButton: {
+    backgroundColor: '#ff9800',
+    padding: 15,
+    borderRadius: 5,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  downloadButtonText: { color: 'white', fontSize: 16 },
   deleteButton: { backgroundColor: 'red', padding: 15, borderRadius: 5, alignItems: 'center' },
   deleteButtonText: { color: 'white', fontSize: 16 },
 });

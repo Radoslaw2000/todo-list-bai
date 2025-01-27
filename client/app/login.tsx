@@ -15,20 +15,21 @@ const LoginScreen = () => {
       Alert.alert('Błąd', 'Proszę uzupełnić wszystkie pola');
       return;
     }
-
+  
     setLoading(true);
-
+  
     try {
       const response = await fetch(`${config.apiUrl}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ login, password }),
       });
-
+  
       const data = await response.json();
-
+  
       if (response.ok) {
-        await SecureStore.setItemAsync('username', login);
+        await SecureStore.setItemAsync('accessToken', data.accessToken);
+        await SecureStore.setItemAsync('refreshToken', data.refreshToken);
         Alert.alert('Sukces', data.message);
         router.push('/MenuScreen');
       } else {
@@ -41,6 +42,7 @@ const LoginScreen = () => {
       setLoading(false);
     }
   };
+  
 
   return (
     <View style={styles.container}>
