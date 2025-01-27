@@ -37,7 +37,7 @@ export default function RootLayout() {
         <Stack.Screen name="AddListScreen" options={{ headerShown: false }} /> 
         <Stack.Screen name="EditListScreen" options={{ headerShown: false }} /> 
         <Stack.Screen name="ListDetailsScreen" options={{ headerShown: false }} /> 
-        <Stack.Screen name="ManageAccountScreen" options={{ headerShown: false }} /> 
+        {/* <Stack.Screen name="ManageAccountScreen" options={{ headerShown: false }} />  */}
         <Stack.Screen name="MenuScreen" options={{ headerShown: false }} /> 
         <Stack.Screen name="ViewListsScreen" options={{ headerShown: false }} /> 
         <Stack.Screen name="+not-found" />
