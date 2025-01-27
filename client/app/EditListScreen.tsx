@@ -15,6 +15,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import config from './config';
+import api from '../services/api';
 
 const EditListScreen = () => {
   const { listId } = useLocalSearchParams<{ listId: string }>();
@@ -32,11 +33,10 @@ const EditListScreen = () => {
       }
 
       try {
-        const response = await fetch(`${config.apiUrl}/list-details/${listId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setListName(data.name);
-          setItems(data.items.map((item: any) => ({
+        const response = await api.get(`/list-details/${listId}`);
+        if (response.status === 200) {
+          setListName(response.data.name);
+          setItems(response.data.items.map((item: any) => ({
             id: item.id,
             name: item.name,
             checked: item.checked || 0,
@@ -93,24 +93,20 @@ const EditListScreen = () => {
     const newItems = items.filter((item) => item.isNew);
 
     try {
-      const response = await fetch(`${config.apiUrl}/edit-list/${listId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: listName,
-          existing_items: existingItems.map((item) => ({
-            id: item.id,
-            name: item.name,
-            checked: item.checked,
-          })),
-          new_items: newItems.map((item) => ({
-            name: item.name,
-            checked: item.checked,
-          })),
-        }),
+      const response = await api.put(`/edit-list/${listId}`, {
+        name: listName,
+        existing_items: existingItems.map((item) => ({
+          id: item.id,
+          name: item.name,
+          checked: item.checked,
+        })),
+        new_items: newItems.map((item) => ({
+          name: item.name,
+          checked: item.checked,
+        })),
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         Alert.alert('Sukces', 'Lista została zaktualizowana.');
         router.back();
       } else {
@@ -128,7 +124,7 @@ const EditListScreen = () => {
     try {
       const jsonData = {
         name: listName,
-        items: items.map(({ id, ...rest }) => rest), // Usuwamy pole `id`
+        items: items.map(({ id, ...rest }) => rest),
       };
 
       const fileUri = `${FileSystem.documentDirectory}${listName || 'lista'}.json`;
@@ -153,11 +149,9 @@ const EditListScreen = () => {
         style: 'destructive',
         onPress: async () => {
           try {
-            const response = await fetch(`${config.apiUrl}/edit-list/${listId}`, {
-              method: 'DELETE',
-            });
+            const response = await api.delete(`/edit-list/${listId}`);
 
-            if (response.ok) {
+            if (response.status === 200) {
               Alert.alert('Sukces', 'Lista została usunięta.');
               router.dismissTo('/ViewListsScreen');
             } else {

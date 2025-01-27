@@ -11,8 +11,8 @@ import {
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { Ionicons } from '@expo/vector-icons';
-import config from './config';
 import { useFocusEffect } from '@react-navigation/native';
+import api from '../services/api';
 
 const ViewListsScreen = () => {
   const [lists, setLists] = useState<any[]>([]);
@@ -31,23 +31,24 @@ const ViewListsScreen = () => {
             return;
           }
 
-          const response = await fetch(`${config.apiUrl}/user-lists/${username}`);
-          if (response.ok) {
-            const data = await response.json();
-            setLists(data.lists || []);
+          // Zmiana na użycie API
+          const response = await api.get(`/user-lists/${username}`);
+          if (response.status === 200) {
+            setLists(response.data.lists || []);
           } else {
             Alert.alert('Błąd', 'Nie udało się pobrać list.');
           }
         } catch (error) {
           console.error('Błąd podczas pobierania list:', error);
-          Alert.alert('Błąd', 'Coś poszło nie tak.');
+          Alert.alert('Zostałeś wylogowany, musisz się ponownie zalogować');
+          router.dismissTo('/login');
         } finally {
           setLoading(false);
         }
       };
 
       fetchLists();
-    }, []) // Zmienna zależna - pusta tablica powoduje wywołanie przy każdym wejściu na ekran
+    }, [])
   );
 
   if (loading) {

@@ -13,6 +13,7 @@ import { useFocusEffect } from '@react-navigation/native';
 import TodoItem from '../components/TodoItem';
 import { Ionicons } from '@expo/vector-icons';
 import config from './config';
+import api from '../services/api';
 
 const ListDetailsScreen = () => {
   const { listId } = useLocalSearchParams<{ listId: string }>();
@@ -28,10 +29,9 @@ const ListDetailsScreen = () => {
     }
 
     try {
-      const response = await fetch(`${config.apiUrl}/list-details/${listId}`);
-      if (response.ok) {
-        const data = await response.json();
-        setListDetails(data);
+      const response = await api.get(`/list-details/${listId}`);
+      if (response.status === 200) {
+        setListDetails(response.data);
       } else {
         Alert.alert('Błąd', 'Nie udało się pobrać szczegółów listy.');
       }
@@ -52,13 +52,12 @@ const ListDetailsScreen = () => {
 
   const toggleItemChecked = async (itemId: number, checked: boolean) => {
     try {
-      const response = await fetch(`${config.apiUrl}/update-item-status`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ itemId, checked }),
+      const response = await api.post('/update-item-status', {
+        itemId,
+        checked,
       });
 
-      if (response.ok) {
+      if (response.status === 200) {
         setListDetails((prev: any) => ({
           ...prev,
           items: prev.items.map((item: any) =>

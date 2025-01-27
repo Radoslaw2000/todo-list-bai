@@ -15,7 +15,7 @@ import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as DocumentPicker from 'expo-document-picker';
 import CheckBox from 'expo-checkbox';
-import config from './config';
+import api from '../services/api';
 
 const AddListScreen = () => {
   const [listName, setListName] = useState<string>('');
@@ -83,7 +83,7 @@ const AddListScreen = () => {
         const loadedItems = content.items.map((item: any, index: number) => ({
           id: index.toString(),
           name: item.name || '',
-          checked: Boolean(item.checked), // Zabezpieczenie dla checked
+          checked: Boolean(item.checked),
         }));
         setItems(loadedItems);
         setListName(content.name || '');
@@ -117,30 +117,20 @@ const AddListScreen = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${config.apiUrl}/add-list`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: listName,
-          items: items.map((item) => ({
-            name: item.name,
-            checked: item.checked,
-          })),
-          username,
-        }),
+      const response = await api.post('/add-list', {
+        name: listName,
+        items: items.map((item) => ({
+          name: item.name,
+          checked: item.checked,
+        })),
+        username,
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        Alert.alert('Sukces', data.message);
-        router.back();
-      } else {
-        Alert.alert('Błąd', data.message);
-      }
+      Alert.alert('Sukces', response.data.message);
+      router.back();
     } catch (error) {
-      console.error(error);
-      Alert.alert('Błąd', 'Coś poszło nie tak.');
+      Alert.alert('Zostałeś wylogowany, musisz się ponownie zalogować');
+      router.dismissTo('/login');
     } finally {
       setLoading(false);
     }
@@ -164,7 +154,6 @@ const AddListScreen = () => {
       </TouchableOpacity>
     </View>
   );
-  
 
   return (
     <KeyboardAvoidingView
