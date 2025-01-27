@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,6 +9,7 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useFocusEffect } from '@react-navigation/native';
 import TodoItem from '../components/TodoItem';
 import { Ionicons } from '@expo/vector-icons';
 import config from './config';
@@ -19,32 +20,35 @@ const ListDetailsScreen = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchListDetails = async () => {
-      if (!listId) {
-        Alert.alert('Błąd', 'Nie przekazano listId');
-        router.push('/');
-        return;
-      }
+  const fetchListDetails = async () => {
+    if (!listId) {
+      Alert.alert('Błąd', 'Nie przekazano listId');
+      router.push('/');
+      return;
+    }
 
-      try {
-        const response = await fetch(`${config.apiUrl}/list-details/${listId}`);
-        if (response.ok) {
-          const data = await response.json();
-          setListDetails(data);
-        } else {
-          Alert.alert('Błąd', 'Nie udało się pobrać szczegółów listy.');
-        }
-      } catch (error) {
-        console.error('Błąd:', error);
-        Alert.alert('Błąd', 'Wystąpił problem podczas pobierania danych.');
-      } finally {
-        setLoading(false);
+    try {
+      const response = await fetch(`${config.apiUrl}/list-details/${listId}`);
+      if (response.ok) {
+        const data = await response.json();
+        setListDetails(data);
+      } else {
+        Alert.alert('Błąd', 'Nie udało się pobrać szczegółów listy.');
       }
-    };
+    } catch (error) {
+      console.error('Błąd:', error);
+      Alert.alert('Błąd', 'Wystąpił problem podczas pobierania danych.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchListDetails();
-  }, [listId]);
+  useFocusEffect(
+    useCallback(() => {
+      setLoading(true);
+      fetchListDetails();
+    }, [listId])
+  );
 
   const toggleItemChecked = async (itemId: number, checked: boolean) => {
     try {

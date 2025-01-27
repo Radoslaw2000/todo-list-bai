@@ -159,7 +159,7 @@ const EditListScreen = () => {
 
             if (response.ok) {
               Alert.alert('Sukces', 'Lista została usunięta.');
-              router.push('/MenuScreen');
+              router.replace('/ViewListsScreen');
             } else {
               Alert.alert('Błąd', 'Nie udało się usunąć listy.');
             }
